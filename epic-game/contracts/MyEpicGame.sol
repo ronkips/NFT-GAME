@@ -14,6 +14,8 @@ import "@openzeppelin/contracts/utils/Strings.sol";
 import "hardhat/console.sol";
 
 contract MyEpicGame is ERC721 {
+    uint randNonce = 0; // this is used to help ensure that the algorithm has different inputs every time
+
     struct CharacterAttributes {
         uint characterIndex;
         string name;
@@ -46,6 +48,14 @@ contract MyEpicGame is ERC721 {
     // A mapping from an address => the NFTs tokenId. Gives me an ez way
     // to store the owner of the NFT and reference it later.
     mapping(address => uint256) public nftHolders;
+
+    //events
+    event CharacterNFTMinted(
+        address sender,
+        uint256 tokenId,
+        uint256 characterIndex
+    );
+    event AttackComplete(address sender, uint newBossKip, uint newPlayerKip);
 
     constructor(
         string[] memory characterNames,
@@ -127,6 +137,8 @@ contract MyEpicGame is ERC721 {
 
         // Increment the tokenId for the next person using it.
         _tokenIds.increment();
+
+        emit CharacterNFTMinted(msg.sender, newItemId, _characterIndex);
     }
 
     //tokenURI function
@@ -196,11 +208,23 @@ contract MyEpicGame is ERC721 {
             bigBoss.kip > 0,
             "Error: boss must have KIP to attack character."
         );
+        console.log("%s swings at %s...", player.name, bigBoss.name);
+
         // Allow player to attack boss.
         if (bigBoss.kip < player.attackDamage) {
             bigBoss.kip = 0;
+            console.log("The boss is dead");
         } else {
-            bigBoss.kip = bigBoss.kip - player.attackDamage;
+            if (randomInt(10) > 5) {
+                bigBoss.kip = bigBoss.kip - player.attackDamage;
+                console.log(
+                    "%s attacked boss. New boss kip: %s",
+                    player.name,
+                    bigBoss.kip
+                );
+            } else {
+                console.log("%s missed!\n", player.name);
+            }
         }
         // Allow boss to attack player.
         if (player.kip < bigBoss.attackDamage) {
@@ -208,10 +232,61 @@ contract MyEpicGame is ERC721 {
         } else {
             player.kip = player.kip - bigBoss.attackDamage;
         }
+        emit AttackComplete(msg.sender, bigBoss.kip, player.kip);
+
         console.log("Player attacked boss. New boss kip is: %s", bigBoss.kip);
         console.log(
             "Boss attacked player. New player kip is: %s\n",
             player.kip
         );
     }
+
+    function randomInt(uint _modulus) internal returns (uint) {
+        randNonce++; //increase nonce
+        return
+            uint(
+                keccak256(
+                    abi.encodePacked(block.timestamp, msg.sender, randNonce)
+                )
+            ) % _modulus;
+    }
+
+    //Adding function to check if the user has a character NFT
+    function checkIfUserHasNFT()
+        public
+        view
+        returns (CharacterAttributes memory)
+    {
+        // Get the tokenId of the user's character NFT
+        uint256 userNftTokenId = nftHolders[msg.sender];
+        // If the user has a tokenId in the map, return their character.
+        if (userNftTokenId > 0) {
+            return nftHolderAttributes[userNftTokenId];
+        }
+        // Else, return an empty character.
+        else {
+            CharacterAttributes memory emptyStruct;
+            return emptyStruct;
+        }
+    }
+
+    function getAllDefultCharacters()
+        public
+        view
+        returns (CharacterAttributes[] memory)
+    {
+        return defaultCharacters;
+    }
+
+    function getBigBoss() public view returns (BigBoss memory) {
+        return bigBoss;
+    }
+
+
+
+
 }
+
+
+
+
