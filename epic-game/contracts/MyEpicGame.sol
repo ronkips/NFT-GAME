@@ -37,7 +37,7 @@ contract MyEpicGame is ERC721 {
     Counters.Counter private _tokenIds;
     BigBoss public bigBoss;
 
-    // A lil array to help us hold the default data for our characters.
+    // A array to help us hold the default data for our characters.
     // This will be helpful when we mint new characters and need to know
 
     CharacterAttributes[] defaultCharacters;
@@ -45,7 +45,7 @@ contract MyEpicGame is ERC721 {
     // We create a mapping from the nft's tokenId => that NFTs attributes.
     mapping(uint256 => CharacterAttributes) public nftHolderAttributes;
 
-    // A mapping from an address => the NFTs tokenId. Gives me an ez way
+    // A mapping from an address => the NFTs tokenId. Gives me an easy way
     // to store the owner of the NFT and reference it later.
     mapping(address => uint256) public nftHolders;
 
